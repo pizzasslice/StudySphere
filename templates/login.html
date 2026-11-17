@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login — StudySphere</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/glass.css') }}">
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="app-shell p-8 w-full max-w-md text-center">
+        <div class="w-12 h-12 bg-[#1b86dc] text-white rounded-2xl flex items-center justify-center font-bold text-xl mx-auto mb-4 shadow-lg">S</div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-1">Welcome to StudySphere</h1>
+        <p class="text-xs text-slate-500 mb-6">Sign in to your academic workspace</p>
+
+        <form method="POST" class="space-y-4 text-left">
+            <div>
+                <label class="text-xs font-semibold text-slate-600">Email Address</label>
+                <input type="email" name="email" value="student@snu.edu" required class="w-full mt-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-slate-600">Password</label>
+                <input type="password" name="password" value="pass123" required class="w-full mt-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <button type="submit" class="w-full py-3 bg-[#1b86dc] hover:bg-[#1572be] text-white font-semibold rounded-xl shadow-md transition text-sm">
+                Sign In
+            </button>
+        </form>
+
+        <div class="mt-6 pt-4 border-t border-slate-200/70 text-xs text-slate-500 space-y-1">
+            <p><strong>Student Demo:</strong> <code>student@snu.edu</code> / <code>pass123</code></p>
+            <p><strong>Professor Demo:</strong> <code>prof@snu.edu</code> / <code>pass123</code></p>
+        </div>
+    </div>
+</body>
+</html>
