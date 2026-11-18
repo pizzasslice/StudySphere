@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Assignments & Task Submissions</h1>
+
+{% if current_user.role == 'professor' %}
+<!-- PROFESSOR: CREATE ASSIGNMENT -->
+<div class="glass-card p-6 mb-8">
+    <h2 class="font-bold text-slate-800 text-sm mb-4">Assign New Task / Exercise</h2>
+    <form method="POST" action="{{ url_for('assignments') }}" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <input type="hidden" name="action" value="create_assignment">
+        <select name="subject_id" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            {% for sub in subjects %}
+            <option value="{{ sub.id }}">{{ sub.code }} — {{ sub.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="text" name="title" placeholder="Assignment Title" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+        <input type="datetime-local" name="deadline" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+        <input type="number" name="max_marks" value="100" placeholder="Max Marks" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+        <textarea name="instructions" rows="2" placeholder="Task instructions..." required class="md:col-span-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200"></textarea>
+        <div class="md:col-span-2 flex items-center justify-between gap-4">
+            <input type="file" name="ref_file" class="text-xs text-slate-500">
+            <button type="submit" class="px-6 py-2.5 bg-[#1b86dc] text-white font-semibold rounded-xl hover:bg-[#1572be]">Publish Assignment</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- ASSIGNMENTS LIST -->
+<div class="space-y-6">
+    {% for assign, sub in assignment_rows %}
+    <div class="glass-card p-6">
+        <div class="flex flex-wrap justify-between items-start gap-4 mb-3">
+            <div>
+                <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700">{{ sub.code }}</span>
+                <h3 class="text-lg font-bold text-slate-800 mt-2">{{ assign.title }}</h3>
+                <p class="text-xs text-slate-600 mt-1">{{ assign.instructions }}</p>
+            </div>
+            <div class="text-right text-xs">
+                <p class="font-bold text-slate-700">Max Marks: {{ assign.max_marks }}</p>
+                <p class="text-rose-500 font-semibold mt-1">Due: {{ assign.deadline.strftime('%b %d, %Y %I:%M %p') }}</p>
+                {% if assign.reference_file %}
+                <a href="{{ url_for('static', filename='uploads/' + assign.reference_file) }}" target="_blank" class="inline-block mt-2 text-blue-600 font-semibold hover:underline">📎 Download Reference File</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if current_user.role == 'student' %}
+            <!-- STUDENT SUBMISSION AREA -->
+            {% set my_sub = student_subs.get(assign.id) %}
+            <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+                {% if my_sub %}
+                <div class="text-xs">
+                    <span class="px-3 py-1 rounded-full font-bold {{ 'bg-emerald-100 text-emerald-700' if my_sub.status == 'Graded' else 'bg-blue-100 text-blue-700' }}">
+                        {{ my_sub.status }}
+                    </span>
+                    <span class="text-slate-500 ml-2">Submitted {{ my_sub.submitted_at.strftime('%b %d, %I:%M %p') }}</span>
+                    {% if my_sub.marks_awarded is not none %}
+                    <p class="mt-2 font-bold text-slate-800">Grade: {{ my_sub.marks_awarded }} / {{ assign.max_marks }} — <span class="font-normal text-slate-600">{{ my_sub.feedback }}</span></p>
+                    {% endif %}
+                </div>
+                {% else %}
+                <span class="text-xs font-semibold text-amber-600">Status: Pending Submission</span>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('assignments') }}" enctype="multipart/form-data" class="flex items-center gap-2 text-xs">
+                    <input type="hidden" name="action" value="submit_work">
+                    <input type="hidden" name="assignment_id" value="{{ assign.id }}">
+                    <input type="file" name="submission_file" required class="bg-slate-50 border border-slate-200 rounded-xl p-1.5">
+                    <button type="submit" class="px-4 py-2 bg-[#25b89a] text-white font-semibold rounded-xl hover:bg-[#1fa388]">
+                        {{ 'Re-upload File' if my_sub else 'Upload & Submit' }}
+                    </button>
+                </form>
+            </div>
+
+        {% else %}
+            <!-- PROFESSOR GRADING PANEL -->
+            <div class="mt-4 pt-4 border-t border-slate-100">
+                <p class="text-xs font-bold text-slate-700 mb-3">Student Submissions</p>
+                {% set subs_for_this = all_subs | selectattr('assignment_id', 'equalto', assign.id) | list %}
+                {% for s in subs_for_this %}
+                <form method="POST" action="{{ url_for('assignments') }}" class="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl mb-2 text-xs">
+                    <input type="hidden" name="action" value="grade_sub">
+                    <input type="hidden" name="submission_id" value="{{ s.id }}">
+                    <div>
+                        <span class="font-bold text-slate-800">{{ user_map[s.student_id].full_name }}</span>
+                        <a href="{{ url_for('static', filename='uploads/' + s.file_path) }}" target="_blank" class="ml-3 text-blue-600 font-semibold hover:underline">Open File</a>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" step="0.5" name="marks" value="{{ s.marks_awarded or '' }}" placeholder="Marks" required class="w-20 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white">
+                        <input type="text" name="feedback" value="{{ s.feedback or '' }}" placeholder="Feedback..." class="w-44 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white">
+                        <button type="submit" class="px-3 py-1.5 bg-[#1b86dc] text-white font-semibold rounded-lg">Save Grade</button>
+                    </div>
+                </form>
+                {% else %}
+                <p class="text-xs text-slate-400 italic">No submissions yet.</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
