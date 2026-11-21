@@ -1,4 +1,4 @@
-﻿from datetime import date, datetime
+from datetime import date, datetime
 from math import ceil, floor
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
@@ -114,3 +114,75 @@ def cgpa():
     )
 
 
+@module_b.route('/attendance', methods=['GET', 'POST'])
+@login_required
+def attendance():
+    if request.method == 'POST':
+        if current_user.role != 'professor':
+            abort(403)
+        try:
+            subject_id = int(request.form.get('subject_id', ''))
+            session_date = datetime.strptime(request.form.get('att_date', ''), '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            abort(400)
+        subject = Subject.query.get_or_404(subject_id)
+        if subject.professor_id != current_user.id:
+            abort(403)
+        enrolments = Enrolment.query.filter_by(subject_id=subject.id).all()
+        for enrolment in enrolments:
+            status = request.form.get(f'status_{enrolment.student_id}', 'Absent')
+            if status not in ('Present', 'Absent'):
+                abort(400)
+            record = Attendance.query.filter_by(
+                subject_id=subject.id, student_id=enrolment.student_id, date=session_date
+            ).first()
+            if record:
+                record.status = status
+            else:
+                db.session.add(Attendance(
+                    subject_id=subject.id, student_id=enrolment.student_id,
+                    date=session_date, status=status,
+                ))
+        db.session.commit()
+        flash('Attendance was saved.')
+        return redirect(url_for('module_b.attendance'))
+
+    student_stats = []
+    overall_attended = overall_total = 0
+    prof_subjects = []
+    subject_students = {}
+    if current_user.role == 'student':
+        for enrolment in Enrolment.query.filter_by(student_id=current_user.id).all():
+            subject = db.session.get(Subject, enrolment.subject_id)
+            if subject is None:
+                continue
+            records = Attendance.query.filter_by(
+                subject_id=subject.id, student_id=current_user.id
+            ).all()
+            total = len(records)
+            attended = sum(record.status.lower() == 'present' for record in records)
+            overall_total += total
+            overall_attended += attended
+            pct = round(attended / total * 100, 1) if total else 100.0
+            needed = ceil((MIN_ATTENDANCE_PCT / 100 * total - attended) / (1 - MIN_ATTENDANCE_PCT / 100)) if total and pct < MIN_ATTENDANCE_PCT else 0
+            missable = floor(attended / (MIN_ATTENDANCE_PCT / 100) - total + 1e-9) if total and pct >= MIN_ATTENDANCE_PCT else 0
+            student_stats.append({
+                'subject': subject, 'attended': attended, 'total': total,
+                'pct': pct, 'classes_needed': max(0, needed), 'can_miss': max(0, missable),
+            })
+    elif current_user.role == 'professor':
+        prof_subjects = Subject.query.filter_by(professor_id=current_user.id).all()
+        for subject in prof_subjects:
+            student_ids = [e.student_id for e in Enrolment.query.filter_by(subject_id=subject.id).all()]
+            subject_students[subject.id] = User.query.filter(User.id.in_(student_ids)).all() if student_ids else []
+    else:
+        abort(403)
+
+    overall_pct = round(overall_attended / overall_total * 100, 1) if overall_total else 100.0
+    return render_template(
+        'attendance.html', active_page='attendance', student_stats=student_stats,
+        overall_pct=overall_pct, overall_attended=overall_attended,
+        overall_total=overall_total, min_pct=MIN_ATTENDANCE_PCT,
+        prof_subjects=prof_subjects, subject_students=subject_students,
+        today_str=date.today().isoformat(),
+    )
