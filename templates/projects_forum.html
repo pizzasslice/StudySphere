@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Group Projects & Doubt Forum</h1>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+    <!-- LEFT HALF: GROUP PROJECT MANAGEMENT BOARD -->
+    <div class="space-y-6">
+        <div class="glass-card p-6">
+            <h2 class="font-bold text-slate-800 text-sm mb-4">Create Team Project Group</h2>
+            <form method="POST" action="{{ url_for('module_c.projects_forum') }}" class="space-y-3 text-xs">
+                <input type="hidden" name="action" value="create_group">
+                <div class="grid grid-cols-2 gap-3">
+                    <select name="subject_id" required class="px-3 py-2.5 rounded-xl bg-white border border-slate-200">
+                        {% for s in subjects %}
+                        <option value="{{ s.id }}">{{ s.code }} — {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="name" placeholder="Team / Project Name" required class="px-3 py-2.5 rounded-xl bg-white border border-slate-200">
+                </div>
+                <input type="text" name="members_list" placeholder="Team Members (e.g. Sailesh, Sahana, Teammate 3)" required class="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200">
+                <button type="submit" class="w-full py-2.5 bg-[#1b86dc] text-white font-semibold rounded-xl hover:bg-[#1572be]">Create Project Group</button>
+            </form>
+        </div>
+
+        {% for grp in groups %}
+        <div class="glass-card p-6">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded bg-blue-100 text-blue-700">{{ subject_map[grp.subject_id].code if grp.subject_id in subject_map else 'Project' }}</span>
+                    <h3 class="text-base font-bold text-slate-800 mt-1">{{ grp.name }}</h3>
+                    <p class="text-xs text-slate-400">Members: {{ grp.members_list }}</p>
+                </div>
+            </div>
+
+            <!-- Add Task to Group -->
+            <form method="POST" action="{{ url_for('module_c.projects_forum') }}" class="grid grid-cols-3 gap-2 my-4 text-xs">
+                <input type="hidden" name="action" value="add_group_task">
+                <input type="hidden" name="group_id" value="{{ grp.id }}">
+                <input type="text" name="title" placeholder="Task name..." required class="px-3 py-2 rounded-xl border border-slate-200 bg-white">
+                <input type="text" name="assigned_to" placeholder="Assignee..." required class="px-3 py-2 rounded-xl border border-slate-200 bg-white">
+                <div class="flex gap-1">
+                    <input type="text" name="deadline" placeholder="Due date" required class="w-full px-2.5 py-2 rounded-xl border border-slate-200 bg-white">
+                    <button type="submit" class="px-3 py-2 bg-[#25b89a] text-white font-bold rounded-xl">+</button>
+                </div>
+            </form>
+
+            <!-- Group Tasks List -->
+            <div class="space-y-2 border-t border-slate-100 pt-3">
+                {% set g_tasks = all_group_tasks | selectattr('group_id', 'equalto', grp.id) | list %}
+                {% for t in g_tasks %}
+                <div class="flex items-center justify-between text-xs bg-slate-50 p-2.5 rounded-xl">
+                    <div class="flex items-center gap-2.5">
+                        <form method="POST" action="{{ url_for('module_c.projects_forum') }}">
+                            <input type="hidden" name="action" value="toggle_group_task">
+                            <input type="hidden" name="task_id" value="{{ t.id }}">
+                            <button type="submit" class="w-5 h-5 rounded border flex items-center justify-center font-bold {{ 'bg-emerald-500 border-emerald-500 text-white' if t.is_done else 'bg-white border-slate-300 text-transparent' }}">✓</button>
+                        </form>
+                        <span class="{{ 'line-through text-slate-400' if t.is_done else 'font-semibold text-slate-700' }}">{{ t.title }}</span>
+                    </div>
+                    <span class="text-[11px] text-slate-500">{{ t.assigned_to }} • {{ t.deadline }}</span>
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic">No tasks assigned in this group yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- RIGHT HALF: DOUBT DISCUSSION FORUM -->
+    <div class="space-y-6">
+        <div class="glass-card p-6">
+            <h2 class="font-bold text-slate-800 text-sm mb-4">Ask a Doubt / Start Discussion</h2>
+            <form method="POST" action="{{ url_for('module_c.projects_forum') }}" class="space-y-3 text-xs">
+                <input type="hidden" name="action" value="create_post">
+                <div class="grid grid-cols-2 gap-3">
+                    <select name="subject_id" required class="px-3 py-2.5 rounded-xl bg-white border border-slate-200">
+                        {% for s in subjects %}
+                        <option value="{{ s.id }}">{{ s.code }} — {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="title" placeholder="Question Summary" required class="px-3 py-2.5 rounded-xl bg-white border border-slate-200">
+                </div>
+                <textarea name="body" rows="2" placeholder="Describe your doubt in detail..." required class="w-full px-3 py-2.5 rounded-xl bg-white border border-slate-200"></textarea>
+                <button type="submit" class="w-full py-2.5 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-700">Post Doubt</button>
+            </form>
+        </div>
+
+        {% for post in posts %}
+        <div class="glass-card p-6">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded bg-blue-100 text-blue-700">{{ subject_map[post.subject_id].code if post.subject_id in subject_map else 'General' }}</span>
+                    <span class="text-[11px] text-slate-400 ml-2">by {{ user_map[post.author_id].full_name }}</span>
+                </div>
+                <form method="POST" action="{{ url_for('module_c.projects_forum') }}">
+                    <input type="hidden" name="action" value="resolve_post">
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <button type="submit" class="text-[11px] font-bold px-2.5 py-1 rounded-full {{ 'bg-emerald-100 text-emerald-700' if post.is_resolved else 'bg-amber-100 text-amber-700' }}">
+                        {{ '✓ Resolved' if post.is_resolved else 'Mark Resolved' }}
+                    </button>
+                </form>
+            </div>
+
+            <h3 class="font-bold text-slate-800 text-sm mt-2">{{ post.title }}</h3>
+            <p class="text-xs text-slate-600 mt-1 mb-4">{{ post.body }}</p>
+
+            <!-- Replies Thread -->
+            <div class="space-y-2 bg-slate-50/80 p-3.5 rounded-2xl mb-3">
+                {% set post_replies = replies | selectattr('post_id', 'equalto', post.id) | list %}
+                {% for rep in post_replies %}
+                <div class="text-xs border-b border-slate-200/60 pb-2 last:border-none last:pb-0">
+                    <span class="font-bold text-slate-800">{{ user_map[rep.author_id].full_name }}</span>
+                    {% if user_map[rep.author_id].role == 'professor' %}
+                    <span class="text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded ml-1">Professor</span>
+                    {% endif %}
+                    <p class="text-slate-600 mt-0.5">{{ rep.body }}</p>
+                </div>
+                {% else %}
+                <p class="text-[11px] text-slate-400 italic">No replies yet.</p>
+                {% endfor %}
+            </div>
+
+            <form method="POST" action="{{ url_for('module_c.projects_forum') }}" class="flex gap-2 text-xs">
+                <input type="hidden" name="action" value="add_reply">
+                <input type="hidden" name="post_id" value="{{ post.id }}">
+                <input type="text" name="body" placeholder="Write an answer or comment..." required class="flex-1 px-3 py-2 rounded-xl border border-slate-200 bg-white">
+                <button type="submit" class="px-4 py-2 bg-[#1b86dc] text-white font-semibold rounded-xl">Reply</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
