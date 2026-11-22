@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800">Daily Routine & Academic Schedule</h1>
+        <p class="text-xs text-slate-500">Organize daily study blocks, classes, and upcoming exam/assignment deadlines</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <!-- LEFT 2 COLUMNS: Daily Routine Checklist -->
+    <div class="xl:col-span-2 space-y-6">
+        <!-- Add New Routine Card -->
+        <div class="glass-card p-6">
+            <h2 class="font-bold text-slate-800 text-sm mb-4">Add Daily Study / Habit Block</h2>
+            <form method="POST" action="{{ url_for('module_c.routines_tracker') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                <input type="hidden" name="action" value="add_routine">
+                <input type="text" name="title" placeholder="Task (e.g. Revise Graph Algorithms)" required class="md:col-span-2 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                <select name="category" class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                    <option value="Study">Study</option>
+                    <option value="Classes">Classes</option>
+                    <option value="Revision">Revision</option>
+                    <option value="Projects">Projects</option>
+                    <option value="Exercise">Exercise</option>
+                </select>
+                <input type="text" name="time_slot" placeholder="e.g. 6:00 PM - 7:30 PM" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                <button type="submit" class="md:col-span-4 py-2.5 bg-[#1b86dc] text-white font-semibold rounded-xl hover:bg-[#1572be]">+ Add to Today's Routine</button>
+            </form>
+        </div>
+
+        <!-- Routine Checklist -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-slate-800 text-sm">Today's Checklist</h2>
+                <span class="text-xs font-bold text-blue-600">{{ done_r }} / {{ total_r }} Completed ({{ completion_pct }}%)</span>
+            </div>
+
+            <div class="space-y-3">
+                {% for r in routines %}
+                <div class="flex items-center justify-between p-3.5 rounded-2xl border {{ 'bg-emerald-50/60 border-emerald-100' if r.is_completed else 'bg-white border-slate-100' }}">
+                    <div class="flex items-center gap-3">
+                        <form method="POST" action="{{ url_for('module_c.routines_tracker') }}">
+                            <input type="hidden" name="action" value="toggle_routine">
+                            <input type="hidden" name="routine_id" value="{{ r.id }}">
+                            <button type="submit" class="w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-bold {{ 'bg-[#25b89a] border-[#25b89a] text-white' if r.is_completed else 'border-slate-300 text-transparent hover:border-blue-500' }}">
+                                ✓
+                            </button>
+                        </form>
+                        <div>
+                            <p class="text-xs font-bold {{ 'line-through text-slate-400' if r.is_completed else 'text-slate-800' }}">{{ r.title }}</p>
+                            <p class="text-[11px] text-slate-400">{{ r.time_slot }} • <span class="text-blue-600 font-semibold">{{ r.category }}</span></p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('module_c.routines_tracker') }}">
+                        <input type="hidden" name="action" value="delete_routine">
+                        <input type="hidden" name="routine_id" value="{{ r.id }}">
+                        <button type="submit" class="text-xs text-slate-400 hover:text-rose-500 px-2">Remove</button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic text-center py-6">No routine items scheduled yet. Add your first study block above!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Progress Ring Card & Academic Calendar Deadlines -->
+    <div class="space-y-6">
+        <div class="academic-id-card p-6 text-white">
+            <p class="text-xs uppercase tracking-wider text-blue-100 font-semibold">Daily Completion</p>
+            <p class="text-3xl font-extrabold mt-2">{{ completion_pct }}%</p>
+            <div class="w-full bg-white/20 h-2 rounded-full overflow-hidden mt-3">
+                <div class="bg-white h-full rounded-full" style="width: {{ completion_pct }}%"></div>
+            </div>
+            <p class="text-xs text-blue-100 mt-3">Keep your daily study streak consistent!</p>
+        </div>
+
+        <div class="glass-card p-5">
+            <h2 class="font-bold text-slate-800 text-sm mb-4">Academic Calendar Deadlines</h2>
+            <div class="space-y-3">
+                {% for a in upcoming_assignments %}
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                    <div class="flex justify-between font-bold text-slate-800">
+                        <span>{{ a.title }}</span>
+                        <span class="text-rose-500">{{ a.deadline.strftime('%b %d') }}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">{{ subject_map[a.subject_id].code if a.subject_id in subject_map else 'Course' }} • Max {{ a.max_marks }} Marks</p>
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic">No upcoming deadlines on calendar.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
