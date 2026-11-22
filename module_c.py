@@ -133,4 +133,22 @@ def projects_forum():
         return redirect(url_for('module_c.projects_forum'))
 
     subjects = Subject.query.all()
-    subject_map = {s.id
+    subject_map = {s.id: s for s in subjects}
+    user_map = {u.id: u for u in User.query.all()}
+
+    groups = ProjectGroup.query.all()
+    all_group_tasks = GroupTask.query.all()
+    posts = ForumPost.query.order_by(ForumPost.created_at.desc()).all()
+    replies = ForumReply.query.order_by(ForumReply.created_at.asc()).all()
+
+    return render_template(
+        'projects_forum.html',
+        active_page='collaborate',
+        subjects=subjects,
+        subject_map=subject_map,
+        user_map=user_map,
+        groups=groups,
+        all_group_tasks=all_group_tasks,
+        posts=posts,
+        replies=replies
+    )
