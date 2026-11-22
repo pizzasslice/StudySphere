@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800">Subjects & Study Resources</h1>
+        <p class="text-xs text-slate-500">Access lecture notes, syllabus, and course exercises</p>
+    </div>
+</div>
+
+{% if current_user.role == 'professor' %}
+<!-- PROFESSOR CONTROLS: Create Subject & Upload Notes -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="glass-card p-6">
+        <h2 class="font-bold text-slate-800 text-sm mb-4">Create New Subject</h2>
+        <form method="POST" action="{{ url_for('subjects') }}" class="space-y-3 text-xs">
+            <input type="hidden" name="action" value="create_subject">
+            <div class="grid grid-cols-2 gap-3">
+                <input type="text" name="code" placeholder="Subject Code (e.g. CS201)" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                <input type="number" name="credits" placeholder="Credits (e.g. 4)" required class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            </div>
+            <input type="text" name="name" placeholder="Subject Name (e.g. Operating Systems)" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            <div class="grid grid-cols-2 gap-3">
+                <input type="number" name="internal_weight" value="40" placeholder="Internal % (40)" class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                <input type="number" name="external_weight" value="60" placeholder="External % (60)" class="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            </div>
+            <button type="submit" class="w-full py-2.5 bg-[#1b86dc] text-white font-semibold rounded-xl hover:bg-[#1572be]">Create Subject</button>
+        </form>
+    </div>
+
+    <div class="glass-card p-6">
+        <h2 class="font-bold text-slate-800 text-sm mb-4">Upload Class Notes / Exercises</h2>
+        <form method="POST" action="{{ url_for('subjects') }}" enctype="multipart/form-data" class="space-y-3 text-xs">
+            <input type="hidden" name="action" value="upload_note">
+            <select name="subject_id" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+                {% for sub in subjects %}
+                <option value="{{ sub.id }}">{{ sub.code }} — {{ sub.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="title" placeholder="Resource Title (e.g. Unit 1 Lecture Notes & Practice Set)" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            <input type="text" name="topic" placeholder="Topic / Module (e.g. Module 1)" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200">
+            <input type="file" name="note_file" required class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200">
+            <button type="submit" class="w-full py-2.5 bg-[#25b89a] text-white font-semibold rounded-xl hover:bg-[#1fa388]">Publish Resource</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- SUBJECTS & NOTES GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {% for sub in subjects %}
+    <div class="glass-card p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700">{{ sub.code }}</span>
+                    <span class="text-[11px] font-semibold text-slate-400 ml-2">{{ sub.credits }} Credits • {{ sub.internal_weight }}/{{ sub.external_weight }} Split</span>
+                </div>
+                {% if current_user.role == 'student' %}
+                    {% if sub.id in enrolled_ids %}
+                    <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">✓ Enrolled</span>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('subjects') }}">
+                        <input type="hidden" name="action" value="enrol">
+                        <input type="hidden" name="subject_id" value="{{ sub.id }}">
+                        <button type="submit" class="text-xs font-semibold bg-[#1b86dc] text-white px-3 py-1 rounded-full hover:bg-[#1572be]">+ Enrol</button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <h3 class="text-base font-bold text-slate-800 mb-4">{{ sub.name }}</h3>
+
+            <!-- Class Notes & Exercises List -->
+            <div class="space-y-2 border-t border-slate-100 pt-3">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Class Notes & Exercises</p>
+                {% set sub_notes = resources | selectattr('subject_id', 'equalto', sub.id) | list %}
+                {% for note in sub_notes %}
+                <div class="flex items-center justify-between bg-slate-50/80 p-2.5 rounded-xl text-xs">
+                    <div>
+                        <p class="font-semibold text-slate-700">{{ note.title }}</p>
+                        <p class="text-[10px] text-slate-400">{{ note.topic or 'General' }} • {{ note.uploaded_at.strftime('%b %d') }}</p>
+                    </div>
+                    {% if current_user.role == 'professor' or sub.id in enrolled_ids %}
+                    <a href="{{ url_for('static', filename='uploads/' + note.file_path) }}" target="_blank" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-semibold text-blue-600 hover:bg-blue-50">
+                        Open / Download
+                    </a>
+                    {% else %}
+                    <span class="text-[10px] text-slate-400 italic">Enrol to view</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-400 italic py-2">No notes uploaded for this subject yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
