@@ -22,6 +22,7 @@ from models import (
     Attendance
 )
 from module_b import module_b
+from module_c import module_c
 
 # ---------------- FLASK APPLICATION ----------------
 
@@ -32,8 +33,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///studysphere.db'
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Register Person 2 blueprint
+# Register Person 2 & Person 3 blueprints
 app.register_blueprint(module_b)
+app.register_blueprint(module_c)
 
 # Initialize database
 db.init_app(app)
