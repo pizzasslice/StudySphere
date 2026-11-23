@@ -351,3 +351,11 @@ if __name__ == '__main__':
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     app.run(debug=True)
+
+with app.app_context():
+    db.create_all()
+    seed_initial_data()
+
+if __name__ == '__main__':
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    app.run(debug=True)
