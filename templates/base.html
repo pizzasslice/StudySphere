@@ -33,14 +33,17 @@
                     <a href="{{ url_for('assignments') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ 'nav-item-active' if active_page == 'assignments' else 'text-white/85 hover:bg-white/10' }}">
                         <span>Assignments</span>
                     </a>
-                    <a href="{{ url_for('module_b.cgpa') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/85 hover:bg-white/10">
+                    <a href="{{ url_for('module_b.cgpa') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ 'nav-item-active' if active_page == 'cgpa' else 'text-white/85 hover:bg-white/10' }}">
                         <span>CGPA 8.0+ Predictor</span>
                     </a>
-                    <a href="{{ url_for('module_b.attendance') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/85 hover:bg-white/10">
+                    <a href="{{ url_for('module_b.attendance') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ 'nav-item-active' if active_page == 'attendance' else 'text-white/85 hover:bg-white/10' }}">
                         <span>Attendance Tracker</span>
                     </a>
-                    <a href="#routines" class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/85 hover:bg-white/10">
+                    <a href="{{ url_for('module_c.routines_tracker') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ 'nav-item-active' if active_page == 'routines' else 'text-white/85 hover:bg-white/10' }}">
                         <span>Daily Routine</span>
+                    </a>
+                    <a href="{{ url_for('module_c.projects_forum') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ 'nav-item-active' if active_page == 'collaborate' else 'text-white/85 hover:bg-white/10' }}">
+                        <span>Projects & Forum</span>
                     </a>
                 </nav>
             </div>
