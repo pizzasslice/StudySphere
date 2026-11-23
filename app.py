@@ -136,7 +136,7 @@ def login():
 
         flash('Invalid email or password')
 
-    return render_template('login.html')
+    
 
 
 # ---------------- STUDENT DASHBOARD ----------------
