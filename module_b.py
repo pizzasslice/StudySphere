@@ -144,7 +144,7 @@ def attendance():
                     date=session_date, status=status,
                 ))
         db.session.commit()
-        flash('Attendance was saved.')
+        flash('Attendance is saved.')
         return redirect(url_for('module_b.attendance'))
 
     student_stats = []
