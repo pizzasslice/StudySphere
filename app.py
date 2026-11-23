@@ -48,7 +48,8 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User,)
+    return db.session.get(User, int(user_id))
+
 
 
 # ---------------- INITIAL DATABASE DATA ----------------
