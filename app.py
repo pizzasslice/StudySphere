@@ -220,7 +220,7 @@ def dashboard():
             'icon': 'N',
             'title': 'Unit 3 Lecture Notes',
             'subtitle': 'Data Structures',
-            'meta': '2h ago'
+            'meta': '2 hours ago'
         },
         {
             'icon': 'G',
